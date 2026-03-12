@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURAM - Premium Retail Experience</title>
+    <title>AURAM - Premium AI Mirror</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
@@ -16,52 +16,47 @@
             --glow: 0 0 20px rgba(0,212,255,0.6); 
         }
 
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: white; font-family: 'Helvetica Neue', Helvetica, sans-serif; overflow: hidden; }
-        
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: white; font-family: 'Helvetica Neue', sans-serif; overflow: hidden; }
         #mirror-container { position: relative; width: 100vw; height: 100vh; }
         #webcam { display: none; }
         #canvasMirror { width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
         #vto-result-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; display: none; }
 
-        /* Interfaz de Usuario */
-        #ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; z-index: 10; transition: opacity 0.5s ease; }
-        
+        #ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; z-index: 10; transition: opacity 0.5s; }
         h1 { text-align: center; letter-spacing: 15px; font-weight: 200; margin-top: 35px; font-size: 45px; text-shadow: var(--glow); }
 
-        /* Panel Glassmorphism (Traslúcido) */
+        /* Panel con Desenfoque */
         #response-panel { 
             background: var(--panel-bg); 
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             padding: 35px; margin: 0 50px; border-radius: 35px; 
             border: 1px solid rgba(255, 255, 255, 0.15); 
             pointer-events: auto; min-height: 200px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .auram-response-container { display: flex; align-items: center; justify-content: space-between; gap: 30px; }
-        .auram-text-col { flex: 2.2; font-size: 22px; line-height: 1.6; font-weight: 300; }
-        .auram-thumb-col { flex: 0.8; display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.08); padding: 15px; border-radius: 25px; border: 1px solid var(--accent); }
-        .thumb-image { width: 140px; height: 140px; object-fit: contain; filter: drop-shadow(var(--glow)); }
+        .auram-text-col { flex: 2.2; font-size: 22px; line-height: 1.6; }
+        .auram-thumb-col { flex: 0.8; display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 25px; border: 1px solid var(--accent); }
+        .thumb-image { width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(var(--glow)); }
 
-        #vto-controls { display: none; gap: 25px; justify-content: center; margin-top: 25px; }
-        #controls-footer { padding: 45px; display: flex; gap: 25px; justify-content: center; pointer-events: auto; }
+        #vto-controls { display: none; gap: 20px; justify-content: center; margin-top: 25px; }
+        #controls-footer { padding: 45px; display: flex; gap: 20px; justify-content: center; pointer-events: auto; }
         
-        button { padding: 22px 55px; font-size: 22px; font-weight: bold; border: none; border-radius: 60px; background: linear-gradient(45deg, var(--accent), #0046ff); color: white; cursor: pointer; transition: transform 0.2s; box-shadow: var(--glow); }
-        button:active { transform: scale(0.96); }
+        button { padding: 22px 55px; font-size: 22px; font-weight: bold; border: none; border-radius: 60px; background: linear-gradient(45deg, var(--accent), #0046ff); color: white; cursor: pointer; box-shadow: var(--glow); transition: 0.3s; }
         button.btn-secondary { background: rgba(255,255,255,0.1); border: 1px solid white; backdrop-filter: blur(5px); }
 
-        /* Guía de Posición y Flash */
+        /* Elementos de Captura */
         #guia-hombros { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); width: 55%; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 12; fill: none; opacity: 0.7; display: none; z-index: 95; }
         #camera-flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; z-index: 1000; pointer-events: none; }
         .flash-active { animation: flashAnim 0.4s ease-out; }
         @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-        /* Countdown */
         #countdown-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #count-number { font-size: 200px; color: var(--accent); text-shadow: var(--glow); font-weight: bold; }
+        #count-number { font-size: 180px; color: var(--accent); font-weight: bold; }
 
-        /* Botones después de la foto */
         #post-photo-actions { display: none; gap: 25px; position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); z-index: 20; pointer-events: auto; }
+
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     </style>
 </head>
 <body>
@@ -74,7 +69,7 @@
 
     <svg id="guia-hombros" viewBox="0 0 200 100">
         <path d="M40,80 Q40,40 70,40 L130,40 Q160,40 160,80" />
-        <text x="52" y="30" fill="#00d4ff" font-size="9" font-family="sans-serif" font-weight="bold">ALINEA TUS HOMBROS AQUÍ</text>
+        <text x="50" y="30" fill="#00d4ff" font-size="9" font-family="sans-serif">ALINEA TUS HOMBROS AQUÍ</text>
     </svg>
 
     <div id="countdown-overlay">
@@ -85,7 +80,7 @@
         <h1>A U R A M</h1>
         <div id="response-panel">
             <div id="response-text">
-                <p style="text-align: center; font-size: 28px; font-weight: 300;">Bienvenido. Permíteme analizar tu estilo para ofrecerte una propuesta exclusiva.</p>
+                <p style="text-align: center; font-size: 28px;">Bienvenido. Permíteme analizar tu estilo.</p>
             </div>
             <div id="vto-controls">
                 <button onclick="startCountdown()">PROBAR LOOK</button>
@@ -99,7 +94,7 @@
 
     <div id="post-photo-actions">
         <button class="btn-secondary" style="background:#333;" onclick="cancelPhoto()">← REPETIR FOTO</button>
-        <button style="background: linear-gradient(45deg, #00ffaa, #008855);" onclick="alert('Generando enlace de pago premium...')">ADQUIRIR PRENDA</button>
+        <button style="background: linear-gradient(45deg, #00ffaa, #008855);" onclick="alert('Generando QR de Compra...')">COMPRAR AHORA</button>
     </div>
 </div>
 
@@ -108,8 +103,6 @@
 
     const API_KEY = "AIzaSyDj9S4yWKIV1BqkjsjBNVwh7kn91DxzG7I"; 
     const genAI = new GoogleGenerativeAI(API_KEY);
-    
-    // Configuración del modelo con el Prompt Detallado
     const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
         systemInstruction: `Eres AURAM, una sofisticada IA experta en estilismo premium. 
@@ -139,8 +132,7 @@
             onFrame: async () => {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
-                ctx.save();
-                ctx.scale(-1, 1);
+                ctx.save(); ctx.scale(-1, 1);
                 ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
                 ctx.restore();
             }
@@ -150,7 +142,7 @@
 
     window.analyzeLook = async () => {
         document.getElementById('btn-analyze').style.display = 'none';
-        responseBox.innerHTML = "<p style='text-align:center; font-size: 26px;'>AURAM está diseñando tu propuesta de imagen...</p>";
+        responseBox.innerHTML = "<p style='text-align:center; font-size: 26px;'>AURAM está observando tu esencia...</p>";
         
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = 640; tempCanvas.height = 480;
@@ -159,12 +151,12 @@
 
         try {
             const result = await model.generateContent([
-                `Realiza una asesoría experta con este inventario: ${JSON.stringify(inventario)}. Termina con [[ID:n]]`,
+                `Sugiere del inventario: ${JSON.stringify(inventario)}. Termina con [[ID:n]]`,
                 { inlineData: { data: imgBase64, mimeType: "image/jpeg" } }
             ]);
             renderResponse(await result.response.text());
         } catch (e) {
-            renderResponse("Proyectas una presencia magnífica. Para potenciar tu silueta, he seleccionado esta pieza que aporta una estructura impecable a tus hombros, mientras su tono armoniza con tu luz natural. Una elección versátil para un estilo de vida contemporáneo. [[ID:1]]");
+            renderResponse("Proyectas una presencia magnífica. Esta pieza resaltará tu armonía natural. [[ID:1]]");
         }
     };
 
@@ -178,7 +170,7 @@
                 <div class="auram-text-col">${cleanText}</div>
                 <div class="auram-thumb-col">
                     <img src="${currentProduct.url}" class="thumb-image">
-                    <span style="font-size:16px; font-weight:bold; color:var(--accent); margin-top:8px;">${currentProduct.nombre}</span>
+                    <span style="font-size:16px; font-weight:bold; color:var(--accent);">${currentProduct.nombre}</span>
                 </div>
             </div>`;
         document.getElementById('vto-controls').style.display = 'flex';
@@ -202,10 +194,20 @@
     };
 
     function doVTO() {
+        // Mensaje de "Tejiendo"
+        const responseBox = document.getElementById('response-text');
+        responseBox.innerHTML = `
+            <div style="text-align:center; padding: 20px;">
+                <p style="font-size: 24px; color: var(--accent); font-weight: bold; margin:0;">AURAM VISION</p>
+                <p style="font-size: 18px; letter-spacing: 2px; animation: pulse 1s infinite;">TEJIENDO PRENDA SOBRE SILUETA...</p>
+            </div>`;
+        document.getElementById('ui-overlay').style.opacity = "1";
+
         const resCanvas = document.getElementById('vto-result-canvas');
         const rCtx = resCanvas.getContext('2d');
         resCanvas.width = canvas.width; resCanvas.height = canvas.height;
 
+        // Captura base
         rCtx.save(); rCtx.scale(-1, 1);
         rCtx.drawImage(video, -resCanvas.width, 0, resCanvas.width, resCanvas.height);
         rCtx.restore();
@@ -213,18 +215,31 @@
         const imgP = new Image();
         imgP.crossOrigin = "anonymous";
         imgP.onload = () => {
-            const pw = resCanvas.width * 0.65; // Ajuste según guía de hombros
+            const pw = resCanvas.width * 0.72; 
             const ph = (imgP.height * pw) / imgP.width;
-            
-            rCtx.globalAlpha = 0.96; // Efecto de integración con el fondo
-            rCtx.drawImage(imgP, (resCanvas.width - pw)/2, resCanvas.height * 0.22, pw, ph);
+            const posX = (resCanvas.width - pw) / 2;
+            const posY = resCanvas.height * 0.22;
+
+            // --- RENDERIZADO POR CAPAS (ELIMINA EFECTO CALCOMANÍA) ---
+            rCtx.globalAlpha = 0.92; // Permite que texturas de abajo se noten
+            rCtx.drawImage(imgP, posX, posY, pw, ph);
+
+            rCtx.globalCompositeOperation = 'multiply'; // Fusiona sombras reales
+            rCtx.globalAlpha = 0.25;
+            rCtx.drawImage(imgP, posX, posY, pw, ph);
+
+            rCtx.globalCompositeOperation = 'source-over'; // Reset
             rCtx.globalAlpha = 1.0;
 
-            document.getElementById('camera-flash').classList.remove('flash-active');
-            document.getElementById('countdown-overlay').style.display = 'none';
-            document.getElementById('guia-hombros').style.display = 'none';
-            resCanvas.style.display = 'block';
-            document.getElementById('post-photo-actions').style.display = 'flex';
+            // Simulación de "Tiempo de Procesamiento IA"
+            setTimeout(() => {
+                document.getElementById('camera-flash').classList.remove('flash-active');
+                document.getElementById('countdown-overlay').style.display = 'none';
+                document.getElementById('guia-hombros').style.display = 'none';
+                resCanvas.style.display = 'block';
+                document.getElementById('post-photo-actions').style.display = 'flex';
+                responseBox.innerHTML = "<p style='text-align:center; font-size: 24px;'>Propuesta adaptada con éxito.</p>";
+            }, 1800);
         };
         imgP.src = currentProduct.url;
     }
@@ -233,10 +248,10 @@
         document.getElementById('vto-result-canvas').style.display = 'none';
         document.getElementById('post-photo-actions').style.display = 'none';
         document.getElementById('ui-overlay').style.opacity = "1";
+        document.getElementById('vto-controls').style.display = 'flex';
     };
 
     window.resetAura = () => location.reload();
-
     initCamera();
 </script>
 </body>
