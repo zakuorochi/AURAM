@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURAM VTO Master - Final Build</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root { --accent: #00d4ff; --bg: #000; --panel-bg: rgba(0,0,0,0.85); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: white; font-family: 'Helvetica Neue', sans-serif; overflow: hidden; }
+        
+        #mirror-container { position: relative; width: 100vw; height: 100vh; }
+        #webcam { display: none; }
+        #canvasMirror { width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
+        #vto-result-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; display: none; opacity: 0; transition: opacity 0.8s; }
+
+        /* UI Layer */
+        #ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; z-index: 10; }
+        h1 { text-align: center; letter-spacing: 12px; font-weight: 200; margin-top: 30px; }
+        #response-panel { background: var(--panel-bg); padding: 30px; margin: 40px; border-radius: 25px; border: 1px solid var(--accent); transition: 0.5s; opacity: 1; }
+        #response-text { font-size: 26px; text-align: center; }
+
+        /* Buttons */
+        #vto-controls { display: none; margin-top: 30px; gap: 20px; justify-content: center; pointer-events: auto; }
+        #controls-footer { padding: 40px; display: flex; gap: 20px; justify-content: center; pointer-events: auto; }
+        button { padding: 25px 50px; font-size: 24px; font-weight: bold; border: none; border-radius: 50px; background: linear-gradient(45deg, var(--accent), #0046ff); color: white; cursor: pointer; transition: 0.3s; }
+        button:active { transform: scale(0.95); }
+        button.btn-secondary { background: #333; }
+        button.btn-success { background: linear-gradient(45deg, #22ee88, #00aa66); }
+
+        /* Countdown & Effects */
+        #countdown-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; pointer-events: none; }
+        #count-number { font-size: 180px; font-weight: bold; color: var(--accent); text-shadow: 0 0 30px rgba(0,212,255,0.8); }
+        #posa-mensaje { font-size: 40px; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 20px; }
+        .flash-effect { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 200; animation: flash-anim 0.4s ease-out forwards; }
+        @keyframes flash-anim { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* Attract Mode */
+        #attract-mode { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 1s; pointer-events: auto; cursor: pointer; }
+        #attract-video { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
+        #attract-text { position: relative; z-index: 101; font-size: 50px; letter-spacing: 8px; text-align: center; text-transform: uppercase; }
+
+        /* Loading */
+        #loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
+        #qr-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 40px; border-radius: 30px; display: none; text-align: center; pointer-events: auto; z-index: 150; color: black; }
+    </style>
+</head>
+<body onclick="hideAttractMode()">
+
+<div id="mirror-container">
+    <video id="webcam" autoplay playsinline></video>
+    <canvas id="canvasMirror"></canvas>
+    <canvas id="vto-result-canvas"></canvas>
+
+    <div id="attract-mode">
+        <video id="attract-video" autoplay muted loop>
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-golden-dress-posing-on-a-black-40342-large.mp4" type="video/mp4">
+        </video>
+        <div id="attract-text">A U R A M<br><small style="font-size: 20px;">Toca para descubrir tu estilo sostenible</small></div>
+    </div>
+
+    <div id="countdown-overlay">
+        <div id="posa-mensaje">Posa para la foto</div>
+        <div id="count-number">3</div>
+    </div>
+
+    <div id="ui-overlay">
+        <h1>A U R A M</h1>
+        <div id="response-panel">
+            <div id="response-text">Párate frente a AURAM para comenzar...</div>
+            <div id="vto-controls">
+                <button onclick="startCountdown()">VERME CON ESTO</button>
+                <button class="btn-secondary" onclick="resetAura()">PROBAR OTRO</button>
+            </div>
+        </div>
+        <div id="controls-footer">
+            <button id="btn-analyze" onclick="analyzeLook()">ANALIZAR LOOK</button>
+            <button id="btn-buy" class="btn-success" style="display:none;" onclick="proceedToPurchase()">COMPRAR</button>
+        </div>
+    </div>
+
+    <div id="loading-overlay">
+        <h2 style="letter-spacing: 5px;">AURAM está tejiendo la prenda virtualmente...</h2>
+    </div>
+
+    <div id="qr-modal" onclick="this.style.display='none'">
+        <p>RECOMENDACIÓN FINAL DE AURAM</p>
+        <div id="qr-code"></div>
+        <p style="font-size: 14px; color: #666; margin-top:15px;">Escanea para comprar</p>
+    </div>
+</div>
+
+<script type="importmap">
+    { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
+</script>
+
+<script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+
+    // CONFIGURACIÓN ACTUALIZADA
+    const API_KEY = "AIzaSyB_k8-na3wL58buHoHa1z3n7PO512jhpZA"; 
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    
+    // Inyectando la personalidad de AURAM
+    const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: "Tu nombre es AURAM (Mirror Intelligent Assistant). Eres un asistente de ventas experto en moda y economía circular. Ayudas a los clientes a elegir prendas y sugieres estilos. Siempre identifícate como AURAM y sé amable."
+    });
+
+    const inventario = [
+        { id: "1", nombre: "Casaca Cuero Urbana", url: "casaca1" },
+        { id: "2", nombre: "Vestido de Gala Negro", url: "camisa1" }
+    ];
+
+    const videoElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('canvasMirror');
+    const canvasCtx = canvasElement.getContext('2d');
+    const responseBox = document.getElementById('response-text');
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countNumber = document.getElementById('count-number');
+
+    let currentProduct = null;
+    let cameraActive = false;
+    let idleTimer;
+
+    const simImg = new Image();
+    simImg.crossOrigin = "anonymous";
+    simImg.src = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80";
+
+    window.hideAttractMode = () => {
+        const attract = document.getElementById('attract-mode');
+        attract.style.opacity = "0";
+        setTimeout(() => attract.style.display = 'none', 1000);
+        resetIdleTimer();
+    };
+
+    async function initSystem() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            cameraActive = true;
+            const camera = new Camera(videoElement, {
+                onFrame: async () => await pose.send({image: videoElement}),
+                width: 1280, height: 720
+            });
+            camera.start();
+        } catch (err) {
+            console.warn("Modo Simulación: No se detectó cámara.");
+            runSimulationLoop();
+        }
+    }
+
+    const pose = new Pose({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`});
+    pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5 });
+    pose.onResults((results) => { renderMirror(results.image); });
+
+    function runSimulationLoop() {
+        setInterval(() => { renderMirror(simImg); }, 33);
+    }
+
+    function renderMirror(source) {
+        canvasElement.width = window.innerWidth;
+        canvasElement.height = window.innerHeight;
+        canvasCtx.save();
+        if(cameraActive) {
+            canvasCtx.scale(-1, 1);
+            canvasCtx.drawImage(source, -canvasElement.width, 0, canvasElement.width, canvasElement.height);
+        } else {
+            canvasCtx.drawImage(source, 0, 0, canvasElement.width, canvasElement.height);
+        }
+        canvasCtx.restore();
+    }
+
+    window.analyzeLook = async () => {
+        document.getElementById('btn-analyze').style.display = 'none';
+        responseBox.innerText = "AURAM está analizando tu estilo...";
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = cameraActive ? videoElement.videoWidth : simImg.width;
+        tempCanvas.height = cameraActive ? videoElement.videoHeight : simImg.height;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(cameraActive ? videoElement : simImg, 0, 0);
+        
+        const imgBase64 = tempCanvas.toDataURL('image/jpeg').split(',')[1];
+        const prompt = `Analiza este outfit y elige un producto del inventario: ${JSON.stringify(inventario)}. Responde: "AURAM te sugiere [Nombre] porque...". Al final pon ID:[numero].`;
+
+        try {
+            const result = await model.generateContent([prompt, { inlineData: { data: imgBase64, mimeType: "image/jpeg" } }]);
+            const texto = result.response.text();
+            responseBox.innerText = texto;
+            const match = texto.match(/ID:(\d+)/);
+            if (match) {
+                currentProduct = inventario.find(p => p.id === match[1]);
+                document.getElementById('vto-controls').style.display = 'flex';
+            }
+        } catch (e) {
+            responseBox.innerText = "Error de conexión con AURAM. Revisa tu API Key.";
+            document.getElementById('btn-analyze').style.display = 'block';
+        }
+    };
+
+    window.startCountdown = () => {
+        document.getElementById('vto-controls').style.display = 'none';
+        countdownOverlay.style.display = 'flex';
+        let count = 3;
+        countNumber.innerText = count;
+        
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) countNumber.innerText = count;
+            else {
+                clearInterval(interval);
+                captureAndSimulateVTO();
+            }
+        }, 1000);
+    };
+
+    async function captureAndSimulateVTO() {
+        const flash = document.createElement('div');
+        flash.className = 'flash-effect';
+        document.getElementById('mirror-container').appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
+
+        countdownOverlay.style.display = 'none';
+        document.getElementById('loading-overlay').style.display = 'flex';
+
+        setTimeout(() => {
+            document.getElementById('loading-overlay').style.display = 'none';
+            showResultFromUrl("https://images.unsplash.com/photo-1551028719-00167b16eac5?w=1000&q=80");
+        }, 4000);
+    }
+
+    function showResultFromUrl(url) {
+        const resCanvas = document.getElementById('vto-result-canvas');
+        resCanvas.style.display = 'block';
+        const ctx = resCanvas.getContext('2d');
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            resCanvas.width = canvasElement.width;
+            resCanvas.height = canvasElement.height;
+            ctx.drawImage(img, 0, 0, resCanvas.width, resCanvas.height);
+            resCanvas.style.opacity = "1";
+            responseBox.innerText = "¡El resultado es perfecto! ¿Te gustaría comprarlo?";
+            document.getElementById('btn-buy').style.display = 'block';
+        };
+        img.src = url;
+    }
+
+    window.resetAura = () => {
+        document.getElementById('vto-result-canvas').style.display = 'none';
+        document.getElementById('vto-result-canvas').style.opacity = "0";
+        document.getElementById('btn-analyze').style.display = 'block';
+        document.getElementById('vto-controls').style.display = 'none';
+        document.getElementById('btn-buy').style.display = 'none';
+        responseBox.innerText = "Párate frente a AURAM para comenzar...";
+    };
+
+    window.proceedToPurchase = () => {
+        const qrDiv = document.getElementById('qr-code');
+        qrDiv.innerHTML = "";
+        new QRCode(qrDiv, { text: currentProduct.url, width: 200, height: 200 });
+        document.getElementById('qr-modal').style.display = 'block';
+    };
+
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            const attract = document.getElementById('attract-mode');
+            attract.style.display = 'flex';
+            attract.style.opacity = "1";
+            resetAura();
+        }, 60000);
+    }
+
+    initSystem();
+</script>
+</body>
+</html>
