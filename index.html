@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURAM - Premium AI Mirror</title>
+    <title>AURAM - Generative AI Experience</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
@@ -12,7 +12,7 @@
         :root { 
             --accent: #00d4ff; 
             --bg: #000; 
-            --panel-bg: rgba(0, 0, 0, 0.4); 
+            --panel-bg: rgba(0, 0, 0, 0.45); 
             --glow: 0 0 20px rgba(0,212,255,0.6); 
         }
 
@@ -22,10 +22,10 @@
         #canvasMirror { width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
         #vto-result-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; display: none; }
 
+        /* UI Principal */
         #ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; z-index: 10; transition: opacity 0.5s; }
         h1 { text-align: center; letter-spacing: 15px; font-weight: 200; margin-top: 35px; font-size: 45px; text-shadow: var(--glow); }
 
-        /* Panel con Desenfoque */
         #response-panel { 
             background: var(--panel-bg); 
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
@@ -45,8 +45,8 @@
         button { padding: 22px 55px; font-size: 22px; font-weight: bold; border: none; border-radius: 60px; background: linear-gradient(45deg, var(--accent), #0046ff); color: white; cursor: pointer; box-shadow: var(--glow); transition: 0.3s; }
         button.btn-secondary { background: rgba(255,255,255,0.1); border: 1px solid white; backdrop-filter: blur(5px); }
 
-        /* Elementos de Captura */
-        #guia-hombros { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); width: 55%; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 12; fill: none; opacity: 0.7; display: none; z-index: 95; }
+        /* Guías y Captura */
+        #guia-hombros { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); width: 55%; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 12; fill: none; opacity: 0.7; display: none; z-index: 95; }
         #camera-flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; z-index: 1000; pointer-events: none; }
         .flash-active { animation: flashAnim 0.4s ease-out; }
         @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
@@ -56,7 +56,9 @@
 
         #post-photo-actions { display: none; gap: 25px; position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); z-index: 20; pointer-events: auto; }
 
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        /* Animación de Procesamiento IA */
+        .weaving-text { animation: pulse 1.5s infinite; color: var(--accent); letter-spacing: 3px; font-weight: bold; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.98); } }
     </style>
 </head>
 <body>
@@ -80,40 +82,32 @@
         <h1>A U R A M</h1>
         <div id="response-panel">
             <div id="response-text">
-                <p style="text-align: center; font-size: 28px;">Bienvenido. Permíteme analizar tu estilo.</p>
+                <p style="text-align: center; font-size: 28px;">Bienvenido a la sastrería generativa.</p>
             </div>
             <div id="vto-controls">
                 <button onclick="startCountdown()">PROBAR LOOK</button>
-                <button class="btn-secondary" onclick="resetAura()">OTRO ANÁLISIS</button>
+                <button class="btn-secondary" onclick="resetAura()">OTRO LOOK</button>
             </div>
         </div>
         <div id="controls-footer">
-            <button id="btn-analyze" onclick="analyzeLook()">INICIAR ANÁLISIS</button>
+            <button id="btn-analyze" onclick="analyzeLook()">ANALIZAR MI ESTILO</button>
         </div>
     </div>
 
     <div id="post-photo-actions">
-        <button class="btn-secondary" style="background:#333;" onclick="cancelPhoto()">← REPETIR FOTO</button>
-        <button style="background: linear-gradient(45deg, #00ffaa, #008855);" onclick="alert('Generando QR de Compra...')">COMPRAR AHORA</button>
+        <button class="btn-secondary" style="background:#333;" onclick="cancelPhoto()">← REINTENTAR</button>
+        <button style="background: linear-gradient(45deg, #00ffaa, #008855);" onclick="alert('Generando QR...')">COMPRAR</button>
     </div>
 </div>
 
 <script type="module">
     import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-    const API_KEY = "AIzaSyDj9S4yWKIV1BqkjsjBNVwh7kn91DxzG7I"; 
+    const API_KEY = "AIzaSyDj9S4yWKIV1BqkjsjBNVwh7kn91DxzG7I"; // Reemplaza aquí
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
-        systemInstruction: `Eres AURAM, una sofisticada IA experta en estilismo premium. 
-        Analiza el look, complexión y armonía cromática del usuario.
-        TU RESPUESTA DEBE:
-        1. Elogiar un detalle del estilo actual del usuario.
-        2. Justificar detalladamente por qué la prenda sugerida equilibra su silueta y aporta luminosidad a su imagen basándote en colorimetría.
-        3. Dar un consejo de combinación profesional.
-        4. Evitar menciones directas a rasgos físicos negativos; usa lenguaje aspiracional.
-        5. Extensión: 65-85 palabras.
-        6. OBLIGATORIO: Terminar con [[ID:n]] donde n es el ID del producto.`
+        systemInstruction: `Eres AURAM, una IA de moda premium. Analiza el estilo del usuario y justifica la prenda sugerida con detalle (colorimetría y silueta). Termina con [[ID:n]].`
     });
 
     const inventario = [
@@ -142,7 +136,7 @@
 
     window.analyzeLook = async () => {
         document.getElementById('btn-analyze').style.display = 'none';
-        responseBox.innerHTML = "<p style='text-align:center; font-size: 26px;'>AURAM está observando tu esencia...</p>";
+        responseBox.innerHTML = "<p style='text-align:center;'>AURAM está observando tu esencia...</p>";
         
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = 640; tempCanvas.height = 480;
@@ -151,12 +145,12 @@
 
         try {
             const result = await model.generateContent([
-                `Sugiere del inventario: ${JSON.stringify(inventario)}. Termina con [[ID:n]]`,
+                `Sugiere una prenda de: ${JSON.stringify(inventario)}. Justifica tu elección. Termina con [[ID:n]]`,
                 { inlineData: { data: imgBase64, mimeType: "image/jpeg" } }
             ]);
             renderResponse(await result.response.text());
         } catch (e) {
-            renderResponse("Proyectas una presencia magnífica. Esta pieza resaltará tu armonía natural. [[ID:1]]");
+            renderResponse("Tu estilo proyecta una elegancia natural. He seleccionado esta prenda para armonizar con tu silueta y aportar una luminosidad excepcional a tu imagen. [[ID:1]]");
         }
     };
 
@@ -194,12 +188,12 @@
     };
 
     function doVTO() {
-        // Mensaje de "Tejiendo"
+        // MENSAJE DE "TEJIENDO" (PSICOLOGÍA DE IA)
         const responseBox = document.getElementById('response-text');
         responseBox.innerHTML = `
             <div style="text-align:center; padding: 20px;">
-                <p style="font-size: 24px; color: var(--accent); font-weight: bold; margin:0;">AURAM VISION</p>
-                <p style="font-size: 18px; letter-spacing: 2px; animation: pulse 1s infinite;">TEJIENDO PRENDA SOBRE SILUETA...</p>
+                <p class="weaving-text">AURAM GENERATIVE VISION</p>
+                <p style="font-size: 18px; color: #fff;">TEJIENDO PRENDA SOBRE SILUETA...</p>
             </div>`;
         document.getElementById('ui-overlay').style.opacity = "1";
 
@@ -207,7 +201,7 @@
         const rCtx = resCanvas.getContext('2d');
         resCanvas.width = canvas.width; resCanvas.height = canvas.height;
 
-        // Captura base
+        // Captura fondo
         rCtx.save(); rCtx.scale(-1, 1);
         rCtx.drawImage(video, -resCanvas.width, 0, resCanvas.width, resCanvas.height);
         rCtx.restore();
@@ -215,31 +209,31 @@
         const imgP = new Image();
         imgP.crossOrigin = "anonymous";
         imgP.onload = () => {
-            const pw = resCanvas.width * 0.72; 
+            const pw = resCanvas.width * 0.70; 
             const ph = (imgP.height * pw) / imgP.width;
             const posX = (resCanvas.width - pw) / 2;
             const posY = resCanvas.height * 0.22;
 
-            // --- RENDERIZADO POR CAPAS (ELIMINA EFECTO CALCOMANÍA) ---
-            rCtx.globalAlpha = 0.92; // Permite que texturas de abajo se noten
+            // RENDERIZADO OPTIMIZADO: Fusionamos la prenda con la luz del usuario
+            rCtx.globalAlpha = 0.95; 
             rCtx.drawImage(imgP, posX, posY, pw, ph);
 
-            rCtx.globalCompositeOperation = 'multiply'; // Fusiona sombras reales
-            rCtx.globalAlpha = 0.25;
+            // MULTIPLY: Pasa las sombras del cuerpo a la prenda
+            rCtx.globalCompositeOperation = 'multiply';
+            rCtx.globalAlpha = 0.2;
             rCtx.drawImage(imgP, posX, posY, pw, ph);
 
-            rCtx.globalCompositeOperation = 'source-over'; // Reset
+            rCtx.globalCompositeOperation = 'source-over';
             rCtx.globalAlpha = 1.0;
 
-            // Simulación de "Tiempo de Procesamiento IA"
+            // Simulación de procesamiento IA (2 segundos para dar peso a la demo)
             setTimeout(() => {
                 document.getElementById('camera-flash').classList.remove('flash-active');
                 document.getElementById('countdown-overlay').style.display = 'none';
                 document.getElementById('guia-hombros').style.display = 'none';
                 resCanvas.style.display = 'block';
                 document.getElementById('post-photo-actions').style.display = 'flex';
-                responseBox.innerHTML = "<p style='text-align:center; font-size: 24px;'>Propuesta adaptada con éxito.</p>";
-            }, 1800);
+            }, 2000);
         };
         imgP.src = currentProduct.url;
     }
@@ -248,7 +242,6 @@
         document.getElementById('vto-result-canvas').style.display = 'none';
         document.getElementById('post-photo-actions').style.display = 'none';
         document.getElementById('ui-overlay').style.opacity = "1";
-        document.getElementById('vto-controls').style.display = 'flex';
     };
 
     window.resetAura = () => location.reload();
