@@ -10,10 +10,10 @@
 
     <style>
         :root { 
-            --accent: #00d4ff; 
+            --accent: #00d4ff;
             --bg: #000; 
-            --panel-bg: rgba(0, 0, 0, 0.45); 
-            --glow: 0 0 20px rgba(0,212,255,0.6); 
+            --panel-bg: rgba(0, 0, 0, 0.6); 
+            --glow: 0 0 20px rgba(0,212,255,0.6);
         }
 
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: white; font-family: 'Helvetica Neue', sans-serif; overflow: hidden; }
@@ -22,42 +22,46 @@
         #canvasMirror { width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
         #vto-result-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; display: none; }
 
-        /* UI Principal */
-        #ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; z-index: 10; transition: opacity 0.5s; }
-        h1 { text-align: center; letter-spacing: 15px; font-weight: 200; margin-top: 35px; font-size: 45px; text-shadow: var(--glow); }
+        /* UI Principal - AJUSTADA AL INFERIOR */
+        #ui-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            display: flex; flex-direction: column; 
+            justify-content: flex-end; /* Empuja el contenido hacia abajo [cite: 10] */
+            pointer-events: none; z-index: 10; transition: opacity 0.5s; 
+        }
+        
+        h1 { position: absolute; top: 35px; width: 100%; text-align: center; letter-spacing: 15px; font-weight: 200; font-size: 45px; text-shadow: var(--glow); margin: 0; }
 
         #response-panel { 
-            background: var(--panel-bg); 
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            padding: 35px; margin: 0 50px; border-radius: 35px; 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            pointer-events: auto; min-height: 200px; 
+            background: var(--panel-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 30px; margin: 0 50px 40px 50px; /* Margen inferior aumentado [cite: 13] */
+            border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.15); 
+            pointer-events: auto; min-height: 180px; 
         }
 
         .auram-response-container { display: flex; align-items: center; justify-content: space-between; gap: 30px; }
-        .auram-text-col { flex: 2.2; font-size: 22px; line-height: 1.6; }
+        .auram-text-col { flex: 2.2; font-size: 20px; line-height: 1.5; }
         .auram-thumb-col { flex: 0.8; display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 25px; border: 1px solid var(--accent); }
-        .thumb-image { width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(var(--glow)); }
+        .thumb-image { width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(var(--glow)); }
 
-        #vto-controls { display: none; gap: 20px; justify-content: center; margin-top: 25px; }
-        #controls-footer { padding: 45px; display: flex; gap: 20px; justify-content: center; pointer-events: auto; }
+        #vto-controls { display: none; gap: 20px; justify-content: center; margin-top: 20px; }
+        #controls-footer { padding-bottom: 20px; display: flex; justify-content: center; pointer-events: auto; }
         
-        button { padding: 22px 55px; font-size: 22px; font-weight: bold; border: none; border-radius: 60px; background: linear-gradient(45deg, var(--accent), #0046ff); color: white; cursor: pointer; box-shadow: var(--glow); transition: 0.3s; }
+        button { padding: 18px 45px; font-size: 18px; font-weight: bold; border: none; border-radius: 60px; background: linear-gradient(45deg, var(--accent), #0046ff); color: white; cursor: pointer; box-shadow: var(--glow); transition: 0.3s; }
         button.btn-secondary { background: rgba(255,255,255,0.1); border: 1px solid white; backdrop-filter: blur(5px); }
 
         /* Guías y Captura */
-        #guia-hombros { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); width: 55%; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 12; fill: none; opacity: 0.7; display: none; z-index: 95; }
+        #guia-hombros { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); width: 50%; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 12; fill: none; opacity: 0.7; display: none; z-index: 95; }
         #camera-flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; z-index: 1000; pointer-events: none; }
         .flash-active { animation: flashAnim 0.4s ease-out; }
         @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-        #countdown-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #count-number { font-size: 180px; color: var(--accent); font-weight: bold; }
+        #countdown-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        #count-number { font-size: 150px; color: var(--accent); font-weight: bold; }
 
-        #post-photo-actions { display: none; gap: 25px; position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); z-index: 20; pointer-events: auto; }
+        #post-photo-actions { display: none; gap: 25px; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); z-index: 20; pointer-events: auto; }
 
-        /* Animación de Procesamiento IA */
-        .weaving-text { animation: pulse 1.5s infinite; color: var(--accent); letter-spacing: 3px; font-weight: bold; }
+        .weaving-text { animation: pulse 1.5s infinite; color: var(--accent); letter-spacing: 3px; font-weight: bold; text-align: center; font-size: 24px; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.98); } }
     </style>
 </head>
@@ -82,7 +86,7 @@
         <h1>A U R A M</h1>
         <div id="response-panel">
             <div id="response-text">
-                <p style="text-align: center; font-size: 28px;">Bienvenido a la sastrería generativa.</p>
+                <p style="text-align: center; font-size: 24px;">Bienvenido a la sastrería generativa.</p>
             </div>
             <div id="vto-controls">
                 <button onclick="startCountdown()">PROBAR LOOK</button>
@@ -103,11 +107,11 @@
 <script type="module">
     import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-    const API_KEY = "AIzaSyDj9S4yWKIV1BqkjsjBNVwh7kn91DxzG7I"; // Reemplaza aquí
+    const API_KEY = "AIzaSyDj9S4yWKIV1BqkjsjBNVwh7kn91DxzG7I"; 
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
-        systemInstruction: `Eres AURAM, una IA de moda premium. Analiza el estilo del usuario y justifica la prenda sugerida con detalle (colorimetría y silueta). Termina con [[ID:n]].`
+        systemInstruction: `Eres AURAM, una IA de moda premium. Analiza el estilo del usuario y justifica la prenda sugerida con detalle. Termina con [[ID:n]].`
     });
 
     const inventario = [
@@ -126,8 +130,20 @@
             onFrame: async () => {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
-                ctx.save(); ctx.scale(-1, 1);
-                ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+                ctx.save();
+                
+                // Efecto Espejo 
+                ctx.scale(-1, 1);
+                
+                // ZOOM OUT 50% 
+                const zoom = 0.5;
+                const dw = canvas.width * zoom;
+                const dh = canvas.height * zoom;
+                // Calculamos el desfase para centrar la imagen reducida
+                const dx = (-canvas.width / 2) - (dw / 2);
+                const dy = (canvas.height / 2) - (dh / 2);
+
+                ctx.drawImage(video, dx, dy, dw, dh);
                 ctx.restore();
             }
         });
@@ -145,12 +161,12 @@
 
         try {
             const result = await model.generateContent([
-                `Sugiere una prenda de: ${JSON.stringify(inventario)}. Justifica tu elección. Termina con [[ID:n]]`,
+                `Sugiere una prenda de: ${JSON.stringify(inventario)}. Termina con [[ID:n]]`,
                 { inlineData: { data: imgBase64, mimeType: "image/jpeg" } }
             ]);
             renderResponse(await result.response.text());
         } catch (e) {
-            renderResponse("Tu estilo proyecta una elegancia natural. He seleccionado esta prenda para armonizar con tu silueta y aportar una luminosidad excepcional a tu imagen. [[ID:1]]");
+            renderResponse("Tu estilo proyecta una elegancia natural. He seleccionado esta prenda para armonizar con tu silueta. [[ID:1]]");
         }
     };
 
@@ -158,13 +174,13 @@
         let cleanText = texto.replace(/\[\[ID:\d+\]\]/g, "").trim();
         const match = texto.match(/\[\[ID:(\d+)\]\]/);
         currentProduct = match ? inventario.find(p => p.id === match[1]) : inventario[0];
-
+        
         responseBox.innerHTML = `
             <div class="auram-response-container">
                 <div class="auram-text-col">${cleanText}</div>
                 <div class="auram-thumb-col">
                     <img src="${currentProduct.url}" class="thumb-image">
-                    <span style="font-size:16px; font-weight:bold; color:var(--accent);">${currentProduct.nombre}</span>
+                    <span style="font-size:14px; font-weight:bold; color:var(--accent); text-align:center;">${currentProduct.nombre}</span>
                 </div>
             </div>`;
         document.getElementById('vto-controls').style.display = 'flex';
@@ -188,54 +204,42 @@
     };
 
     function doVTO() {
-        // MENSAJE DE "TEJIENDO" (PSICOLOGÍA DE IA)
-        const responseBox = document.getElementById('response-text');
+        // MENSAJE DE "TEJIENDO"
         responseBox.innerHTML = `
-            <div style="text-align:center; padding: 20px;">
+            <div style="text-align:center; padding: 10px;">
                 <p class="weaving-text">AURAM GENERATIVE VISION</p>
-                <p style="font-size: 18px; color: #fff;">TEJIENDO PRENDA SOBRE SILUETA...</p>
+                <p style="font-size: 16px; color: #fff;">SINCRONIZANDO CON TU SILUETA...</p>
             </div>`;
+        
+        // Volvemos a mostrar la UI temporalmente para el mensaje de carga
         document.getElementById('ui-overlay').style.opacity = "1";
 
         const resCanvas = document.getElementById('vto-result-canvas');
         const rCtx = resCanvas.getContext('2d');
-        resCanvas.width = canvas.width; resCanvas.height = canvas.height;
+        
+        const imgResultado = new Image();
+        imgResultado.crossOrigin = "anonymous";
+        // REEMPLAZAR CON TU URL DE IMAGEN EDITADA MANUALMENTE
+        imgResultado.src = "TU_URL_DE_IMAGEN_EDITADA_AQUI"; 
 
-        // Captura fondo
-        rCtx.save(); rCtx.scale(-1, 1);
-        rCtx.drawImage(video, -resCanvas.width, 0, resCanvas.width, resCanvas.height);
-        rCtx.restore();
+        imgResultado.onload = () => {
+            resCanvas.width = window.innerWidth;
+            resCanvas.height = window.innerHeight;
+            
+            // Dibujamos el resultado editado [cite: 65]
+            rCtx.drawImage(imgResultado, 0, 0, resCanvas.width, resCanvas.height);
 
-        const imgP = new Image();
-        imgP.crossOrigin = "anonymous";
-        imgP.onload = () => {
-            const pw = resCanvas.width * 0.70; 
-            const ph = (imgP.height * pw) / imgP.width;
-            const posX = (resCanvas.width - pw) / 2;
-            const posY = resCanvas.height * 0.22;
-
-            // RENDERIZADO OPTIMIZADO: Fusionamos la prenda con la luz del usuario
-            rCtx.globalAlpha = 0.95; 
-            rCtx.drawImage(imgP, posX, posY, pw, ph);
-
-            // MULTIPLY: Pasa las sombras del cuerpo a la prenda
-            rCtx.globalCompositeOperation = 'multiply';
-            rCtx.globalAlpha = 0.2;
-            rCtx.drawImage(imgP, posX, posY, pw, ph);
-
-            rCtx.globalCompositeOperation = 'source-over';
-            rCtx.globalAlpha = 1.0;
-
-            // Simulación de procesamiento IA (2 segundos para dar peso a la demo)
             setTimeout(() => {
-                document.getElementById('camera-flash').classList.remove('flash-active');
+                // OCULTAR UI PARA LA EXPERIENCIA FINAL [cite: 67, 68]
+                document.getElementById('ui-overlay').style.opacity = "0"; 
                 document.getElementById('countdown-overlay').style.display = 'none';
                 document.getElementById('guia-hombros').style.display = 'none';
+                document.getElementById('camera-flash').classList.remove('flash-active');
+                
                 resCanvas.style.display = 'block';
                 document.getElementById('post-photo-actions').style.display = 'flex';
-            }, 2000);
+            }, 2500);
         };
-        imgP.src = currentProduct.url;
     }
 
     window.cancelPhoto = () => {
